@@ -53,7 +53,8 @@ export default function Atualizacao() {
       setAberto(true);
     } catch (e) {
       // Sem internet, repositório ainda não configurado etc.: só avisa quando o usuário pediu.
-      if (manual) toast.error("Não foi possível verificar atualizações agora. Confira a internet e tente de novo.");
+      const motivo = String((e as Error)?.message ?? e);
+      if (manual) toast.error(`Não foi possível verificar atualizações. Motivo: ${motivo}`, { duration: 15000 });
       console.warn("Falha ao verificar atualização:", e);
     } finally {
       setVerificando(false);
