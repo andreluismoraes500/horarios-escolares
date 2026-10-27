@@ -1,0 +1,34 @@
+[package]
+name = "horarios-escolares"
+version = "1.0.0"
+description = "Gerenciamento de horários escolares multi-escola"
+edition = "2021"
+
+[lib]
+name = "horarios_escolares_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.32", features = ["bundled", "backup"] }
+argon2 = "0.5"
+aes-gcm = "0.10"
+rand = "0.8"
+sha2 = "0.10"
+hex = "0.4"
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "1"
+
+[profile.release]
+# Perfil leve: evita travamentos do rustc em alguns Windows (STATUS_HEAP_CORRUPTION)
+opt-level = 2
+strip = true
