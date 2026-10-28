@@ -17,6 +17,7 @@ import GradeSemanal from "@/pages/Horarios/GradeSemanal";
 import Usuarios from "@/pages/Usuarios/Usuarios";
 import Backups from "@/pages/Backups/Backups";
 import Auditoria from "@/pages/Auditoria/Auditoria";
+import Apoio from "@/pages/Apoio/Apoio";
 import Relatorios from "@/pages/Relatorios/Relatorios";
 
 /** Protege rotas por permissão de leitura do recurso. */
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="usuarios" element={<Protegida recurso="usuarios"><Usuarios /></Protegida>} />
         <Route path="backups" element={<Protegida recurso="backup"><Backups /></Protegida>} />
         <Route path="auditoria" element={<Protegida recurso="auditoria"><Auditoria /></Protegida>} />
+        <Route path="apoio" element={<Apoio />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

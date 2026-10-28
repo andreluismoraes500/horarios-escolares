@@ -2,6 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import {
   Archive, Building2, CalendarDays, Clock, DoorOpen, FileText, GraduationCap, LayoutDashboard,
   LogOut, Moon, Wand2, Sun, Users, UserCog, BookOpen, ShieldCheck,
+  Heart,
 } from "lucide-react";
 import { useAuth } from "@/stores/auth";
 import { useDados } from "@/stores/dados";
@@ -35,6 +36,7 @@ const ITENS: Item[] = [
   { para: "/usuarios", rotulo: "Usuários", icone: <UserCog className="h-4 w-4" />, recurso: "usuarios" },
   { para: "/backups", rotulo: "Backups", icone: <Archive className="h-4 w-4" />, recurso: "backup" },
   { para: "/auditoria", rotulo: "Auditoria", icone: <ShieldCheck className="h-4 w-4" />, recurso: "auditoria" },
+  { para: "/apoio", rotulo: "Apoie o projeto", icone: <Heart className="h-4 w-4" /> },
 ];
 
 export default function Layout() {
