@@ -117,6 +117,13 @@ export default function Layout() {
         <main className="min-h-0 flex-1 overflow-auto p-6">
           <Outlet />
         </main>
+        <footer className="no-print flex h-8 shrink-0 items-center justify-center gap-1 border-t bg-card px-4 text-xs text-muted-foreground">
+          Desenvolvido por <b className="font-medium text-foreground">André Luis de Moraes</b>
+          <span aria-hidden>·</span>
+          <NavLink to="/apoio" className="inline-flex items-center gap-1 hover:text-foreground hover:underline">
+            <Heart className="h-3 w-3" />Apoie o projeto
+          </NavLink>
+        </footer>
       </div>
     </div>
   );
