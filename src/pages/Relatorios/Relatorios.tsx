@@ -38,6 +38,7 @@ export default function Relatorios() {
   const [visao, setVisao] = useState<Visao>(soProfessor ? "professor" : "turma");
   const [entId, setEntId] = useState<number | null>(null);
   const [sabado, setSabado] = useState(false);
+  const [todos, setTodos] = useState(false);
 
   const opcoes = visao === "turma" ? turmas : visao === "professor" ? professores : salas;
   useEffect(() => {
@@ -46,22 +47,34 @@ export default function Relatorios() {
   }, [opcoes, entId, soProfessor, usuario?.professor_id]);
 
   const dias = DIAS.filter((d) => sabado || d.n <= 5).map((d) => d.n);
-  const linhas = useMemo(() => (entId == null ? [] : montarGrade(dados, visao, entId, dias)), [dados, visao, entId, sabado]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rotuloVisao = visao === "turma" ? "Turma" : visao === "professor" ? "Professor(a)" : "Sala";
+  // Uma grade por entidade; em "Todas" entram todas as que têm horários (professor/sala sem aulas ficam de fora).
+  const grades = useMemo(() => {
+    const alvo = todos && !soProfessor ? opcoes.map((o) => o.id) : entId == null ? [] : [entId];
+    return alvo
+      .map((id) => ({ id, titulo: `Grade — ${rotuloVisao} ${nomeEntidade(dados, visao, id)}`, linhas: montarGrade(dados, visao, id, dias) }))
+      .filter((g) => g.linhas.length > 0 && (!todos || visao === "turma" || g.linhas.some((l) => l.celulas.some(Boolean))));
+  }, [dados, visao, entId, sabado, todos]); // eslint-disable-line react-hooks/exhaustive-deps
   const escola = escolas.find((e) => e.id === escolaId);
-  const variosTurnos = new Set(linhas.map((l) => l.horario.turno)).size > 1;
-  const titulo = entId == null ? "" : `Grade — ${visao === "turma" ? "Turma" : visao === "professor" ? "Professor(a)" : "Sala"} ${nomeEntidade(dados, visao, entId)}`;
-  const nomeArq = `grade-${visao}-${entId == null ? "" : nomeEntidade(dados, visao, entId)}`.replace(/[^\w-]+/g, "_");
+  const nomeArq = todos && !soProfessor
+    ? `grade-todas-${visao}s`
+    : `grade-${visao}-${entId == null ? "" : nomeEntidade(dados, visao, entId)}`.replace(/[^\w-]+/g, "_");
 
   async function exportarCsv() {
     const caminho = await save({ defaultPath: `${nomeArq}.csv`, filters: [{ name: "CSV", extensions: ["csv"] }] });
     if (!caminho) return;
-    await executar(() => api.salvarArquivo(caminho, textoBase64(gradeParaCsv(linhas, dias))), "CSV exportado.");
+    const csv = grades.map((g) => (grades.length > 1 ? `"${g.titulo}"\r\n` : "") + gradeParaCsv(g.linhas, dias).replace("\ufeff", "")).join("\r\n\r\n");
+    await executar(() => api.salvarArquivo(caminho, textoBase64("\ufeff" + csv)), grades.length > 1 ? `CSV com ${grades.length} grades exportado.` : "CSV exportado.");
   }
 
   async function exportarPdf() {
     const caminho = await save({ defaultPath: `${nomeArq}.pdf`, filters: [{ name: "PDF", extensions: ["pdf"] }] });
     if (!caminho) return;
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    grades.forEach((g, gi) => {
+    if (gi > 0) doc.addPage();
+    const { linhas, titulo } = g;
+    const variosTurnos = new Set(linhas.map((l) => l.horario.turno)).size > 1;
     let xTexto = 14;
     if (escola?.logo) {
       try {
@@ -134,6 +147,7 @@ export default function Relatorios() {
     });
     doc.setFontSize(8);
     doc.text(`Gerado em ${new Date().toLocaleString("pt-BR")}`, 14, doc.internal.pageSize.getHeight() - 8);
+    });
     const bytes = new Uint8Array(doc.output("arraybuffer"));
     await executar(() => api.salvarArquivo(caminho, paraBase64(bytes)), "PDF exportado.");
   }
@@ -148,9 +162,9 @@ export default function Relatorios() {
           subtitulo="Exporte ou imprima a grade de uma turma, professor ou sala"
           acoes={
             <>
-              <Button variant="outline" onClick={exportarCsv} disabled={entId == null}><FileSpreadsheet className="h-4 w-4" />CSV</Button>
-              <Button variant="outline" onClick={() => void exportarPdf().catch((e: Error) => toast.error(e.message))} disabled={entId == null}><FileDown className="h-4 w-4" />PDF</Button>
-              <Button onClick={() => window.print()} disabled={entId == null}><Printer className="h-4 w-4" />Imprimir</Button>
+              <Button variant="outline" onClick={exportarCsv} disabled={grades.length === 0}><FileSpreadsheet className="h-4 w-4" />CSV</Button>
+              <Button variant="outline" onClick={() => void exportarPdf().catch((e: Error) => toast.error(e.message))} disabled={grades.length === 0}><FileDown className="h-4 w-4" />PDF</Button>
+              <Button onClick={() => window.print()} disabled={grades.length === 0}><Printer className="h-4 w-4" />{todos && !soProfessor ? `Imprimir tudo (${grades.length})` : "Imprimir"}</Button>
             </>
           }
         />
@@ -162,30 +176,40 @@ export default function Relatorios() {
                 <option value="professor">Por professor</option>
                 <option value="sala">Por sala</option>
               </Select>
-              <SelectBusca className="w-72" ariaLabel="Selecionar" value={entId} onChange={(v) => setEntId(Number(v))}
-                opcoes={opcoes.map((o) => ({ value: String(o.id), label: o.nome, cor: visao === "professor" ? (o as { cor?: string }).cor : undefined }))} />
+              {!todos && <SelectBusca className="w-72" ariaLabel="Selecionar" value={entId} onChange={(v) => setEntId(Number(v))}
+                opcoes={opcoes.map((o) => ({ value: String(o.id), label: o.nome, cor: visao === "professor" ? (o as { cor?: string }).cor : undefined }))} />}
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={todos} onChange={(e) => setTodos(e.target.checked)} />
+                Todas as {visao === "turma" ? "turmas" : visao === "professor" ? "professores" : "salas"}
+              </label>
             </>
           )}
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={sabado} onChange={(e) => setSabado(e.target.checked)} /> Incluir sábado</label>
         </div>
       </div>
 
-      {entId == null || linhas.length === 0 ? (
+      {grades.length === 0 ? (
         <Vazio texto="Nada para exibir. Cadastre horários e selecione uma turma, professor ou sala." />
       ) : (
-        <Card className="area-impressao overflow-x-auto p-4">
-          <div className="mb-3 flex items-center gap-3">
-            {escola?.logo && <img src={escola.logo} alt="" className="h-10 w-10 object-contain" />}
-            <div>
-              <div className="font-semibold">{escola?.nome}</div>
-              <div className="text-sm text-muted-foreground">{titulo}</div>
-            </div>
-          </div>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr>{cabecalho(dias).map((c) => <th key={c} className="border bg-muted p-1.5 text-left">{c}</th>)}</tr>
-            </thead>
-            <tbody>
+        <div className="area-impressao space-y-6">
+          {todos && !soProfessor && <p className="no-print text-sm text-muted-foreground">{grades.length} grade(s): o PDF e a impressão trazem uma por página.</p>}
+          {grades.map((g) => {
+            const { linhas, titulo } = g;
+            const variosTurnos = new Set(linhas.map((l) => l.horario.turno)).size > 1;
+            return (
+              <Card key={g.id} className="pagina-impressao overflow-x-auto p-4">
+                <div className="mb-3 flex items-center gap-3">
+                  {escola?.logo && <img src={escola.logo} alt="" className="h-10 w-10 object-contain" />}
+                  <div>
+                    <div className="font-semibold">{escola?.nome}</div>
+                    <div className="text-sm text-muted-foreground">{titulo}</div>
+                  </div>
+                </div>
+                <table className="w-full border-collapse text-xs">
+                  <thead>
+                    <tr>{cabecalho(dias).map((c) => <th key={c} className="border bg-muted p-1.5 text-left">{c}</th>)}</tr>
+                  </thead>
+                  <tbody>
               {linhas.map((l, i) => (
                 <Fragment key={l.horario.id}>
                   {variosTurnos && (i === 0 || linhas[i - 1].horario.turno !== l.horario.turno) && (
@@ -218,9 +242,12 @@ export default function Relatorios() {
                   )}
                 </Fragment>
               ))}
-            </tbody>
-          </table>
-        </Card>
+                  </tbody>
+                </table>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </>
   );

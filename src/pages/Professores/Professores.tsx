@@ -182,6 +182,11 @@ export default function Professores() {
                     onChange={(e) => setEdit({ ...edit, dados: { ...edit.dados, intersticio_horas: Number(e.target.value) || 0 } })} />
                 </label>
               </div>
+              <p className="mt-2 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
+                <b>Deslocamento:</b> use quando o professor trabalha em outro lugar. Marque esse horário como <b>indisponível</b> na grade abaixo
+                (ex.: terça das 08:40 às 09:30 na outra escola) e informe os minutos para ir/voltar. O sistema evita colocar aula colada nesse
+                compromisso (ex.: 60 min bloqueia a aula anterior e a seguinte), e avisa se você tentar à mão.
+              </p>
               <label className="mt-2 flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={edit.dados.da_aula_sabado}
                   onChange={(e) => setEdit({ ...edit, dados: { ...edit.dados, da_aula_sabado: e.target.checked } })} />

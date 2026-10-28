@@ -104,3 +104,6 @@ O app consulta o GitHub ao abrir (e pelo botão **Verificar atualizações** no 
 ## Seleção em lote e Auditoria
 - **Matérias, Salas, Professores e Turmas**: caixa em cada linha, caixa "selecionar todos" no cabeçalho (vale para o que está filtrado) e botão *Excluir selecionados*; a lixeira da linha continua excluindo um a um.
 - **Auditoria**: atalhos Hoje/Ontem/7/30 dias, intervalo de datas, filtros por usuário, ação e tela, pesquisa no detalhe, registros agrupados por dia e exportação em CSV.
+
+## Relatórios: imprimir tudo
+Marque **Todas as turmas/professores/salas** para gerar, em um único PDF/CSV ou na impressão (**Imprimir tudo**), uma grade por página.

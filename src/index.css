@@ -99,7 +99,31 @@ body {
   .no-print {
     display: none !important;
   }
+  /* A tela do app é presa à altura da janela (main com rolagem); na impressão tudo flui em várias páginas. */
+  html, body, #root {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  #root > div, #root div:has(> main), main {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
   .area-impressao {
     overflow: visible !important;
+  }
+  /* Impressão de várias grades: cada uma começa em uma página nova */
+  .pagina-impressao {
+    overflow: visible !important;
+    break-after: page;
+    page-break-after: always;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  .pagina-impressao:last-child {
+    break-after: auto;
+    page-break-after: auto;
   }
 }
