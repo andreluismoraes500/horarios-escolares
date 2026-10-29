@@ -66,8 +66,8 @@ const nAulas = (bs: Bloco[]) => bs.reduce((s, b) => s + b.n, 0);
 const porPeriodo = (bs: Bloco[]) => ORDEM.map((per) => ({ per, bs: bs.filter((b) => periodoDe(b.ini) === per) })).filter((x) => x.bs.length > 0);
 
 /** Nomes dos coordenadores responsáveis pelas turmas informadas. */
-function coordenadoresDe(turmaIds: number[], d: Dados): string {
-  const nomes = d.coordenadores.filter((c) => c.turma_ids.some((t) => turmaIds.includes(t))).map((c) => c.nome);
+function coordenadoresDe(turmaIds: number[], d: Dados, exceto?: number): string {
+  const nomes = d.coordenadores.filter((c) => (exceto == null || c.professor_id !== exceto) && c.turma_ids.some((t) => turmaIds.includes(t))).map((c) => c.nome);
   return [...new Set(nomes)].join(", ");
 }
 
@@ -94,7 +94,7 @@ export function folhaMensal(p: Professor, mes: string, sabado: boolean, d: Dados
     for (const g of porPeriodo(bs)) {
       assinaturas++;
       const linha: Cel[] = [data, { t: g.per, tipo: "txt" }, { t: g.bs.map(textoBloco).join("\n"), tipo: "txt" }, { t: "", tipo: "ass" }];
-      if (visto) { const c = coordenadoresDe(g.bs.flatMap((b) => b.turmaIds), d); linhas.push([...linha, { t: c ? `Coord.: ${c}` : "", tipo: "ass" }]); } else linhas.push(linha);
+      if (visto) { const c = coordenadoresDe(g.bs.flatMap((b) => b.turmaIds), d, p.id); linhas.push([...linha, { t: c ? `Coord.: ${c}` : "", tipo: "ass" }]); } else linhas.push(linha);
     }
   }
   return {
@@ -122,7 +122,7 @@ export function folhaSemanal(profs: Professor[], segunda: string, sabado: boolea
         else if (doPer[i].length === 0) cels.push({ t: "—", tipo: "vazio" });
         else cels.push({ t: `${fmtMin(doPer[i][0].ini)}–${fmtMin(doPer[i][doPer[i].length - 1].fim)}\n${nAulas(doPer[i])} aula(s)`, tipo: "ass" });
       });
-      if (visto) cels.push({ t: coordenadoresDe(doPer.flat().flatMap((b) => b.turmaIds), d), tipo: "txt" });
+      if (visto) cels.push({ t: coordenadoresDe(doPer.flat().flatMap((b) => b.turmaIds), d, p.id), tipo: "txt" });
       linhas.push(cels);
     }
   }

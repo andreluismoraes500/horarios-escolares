@@ -72,7 +72,7 @@ function EditorExpediente({ valor, onChange }: { valor: Periodo[]; onChange: (p:
 
 export default function Coordenadores() {
   const pode = useAuth((s) => s.pode);
-  const { escolaId, turmas, materias, demandas, aulas } = useDados();
+  const { escolaId, professores, turmas, materias, demandas, aulas } = useDados();
   const [lista, setLista] = useState<Coordenador[]>([]);
   const [busca, setBusca] = useState("");
   const [edit, setEdit] = useState<{ id: number | null; dados: CoordenadorInput; expediente: Periodo[] } | null>(null);
@@ -104,7 +104,7 @@ export default function Coordenadores() {
     const ok = await executar(() => (edit.id ? api.atualizarCoordenador(edit.id, dados) : api.criarCoordenador(dados)), "Coordenador salvo.");
     if (ok) { setEdit(null); await carregar(); }
   }
-  const novo = (): CoordenadorInput => ({ escola_id: escolaId!, nome: "", email: "", telefone: "", expediente: "[]", turma_ids: [] });
+  const novo = (): CoordenadorInput => ({ escola_id: escolaId!, nome: "", email: "", telefone: "", expediente: "[]", turma_ids: [], professor_id: null });
 
   if (!escolaId) return <Vazio texto="Selecione ou cadastre uma escola." />;
   const podeCriar = pode("professores", "criar");
@@ -125,14 +125,14 @@ export default function Coordenadores() {
             {filtrada.map((c) => (
               <tr key={c.id}>
                 {pode("professores", "excluir") && <TdSel s={selecao} id={c.id} nome={c.nome} />}
-                <Td className="font-medium">{c.nome}<div className="text-xs font-normal text-muted-foreground">{c.email || c.telefone || ""}</div></Td>
+                <Td className="font-medium">{c.nome}{c.professor_id != null && <Badge className="ml-2">Professor(a)</Badge>}<div className="text-xs font-normal text-muted-foreground">{c.email || c.telefone || ""}</div></Td>
                 <Td><div className="flex flex-wrap gap-1">{c.turma_ids.length === 0 ? "—" : c.turma_ids.map((id) => <Badge key={id}>{nomeTurma(id)}</Badge>)}</div></Td>
                 <Td><div className="flex flex-wrap gap-1">{materiasDe(c.turma_ids).map((m) => <span key={m.id} className="rounded-full px-2 py-0.5 text-xs text-white" style={{ background: m.cor }}>{m.nome}</span>)}</div></Td>
                 <Td className="text-xs text-muted-foreground">{resumoExpediente(c.expediente)}</Td>
                 <Td>
                   <div className="flex gap-1">
                     {pode("professores", "editar") && (
-                      <Button size="icon" variant="ghost" aria-label="Editar" onClick={() => setEdit({ id: c.id, dados: { escola_id: c.escola_id, nome: c.nome, email: c.email ?? "", telefone: c.telefone ?? "", expediente: c.expediente, turma_ids: c.turma_ids }, expediente: lerExpediente(c.expediente) })}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" aria-label="Editar" onClick={() => setEdit({ id: c.id, dados: { escola_id: c.escola_id, nome: c.nome, email: c.email ?? "", telefone: c.telefone ?? "", expediente: c.expediente, turma_ids: c.turma_ids, professor_id: c.professor_id }, expediente: lerExpediente(c.expediente) })}><Pencil className="h-4 w-4" /></Button>
                     )}
                     {pode("professores", "excluir") && <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => setExcluir(c)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                   </div>
@@ -146,6 +146,16 @@ export default function Coordenadores() {
       <Modal aberto={!!edit} onFechar={() => setEdit(null)} titulo={edit?.id ? "Editar coordenador" : "Novo coordenador"} largura="max-w-2xl">
         {edit && (
           <div className="max-h-[75vh] space-y-4 overflow-y-auto pr-1">
+            <Campo label="Também é professor(a)?">
+              <SelectBusca ariaLabel="Professor vinculado" value={edit.dados.professor_id != null ? String(edit.dados.professor_id) : "nenhum"}
+                onChange={(v) => {
+                  if (v === "nenhum") return setEdit({ ...edit, dados: { ...edit.dados, professor_id: null } });
+                  const p = professores.find((x) => String(x.id) === v);
+                  if (p) setEdit({ ...edit, dados: { ...edit.dados, professor_id: p.id, nome: p.nome, email: p.email ?? edit.dados.email, telefone: p.telefone ?? edit.dados.telefone } });
+                }}
+                opcoes={[{ value: "nenhum", label: "Não, só coordenador(a)" }, ...professores.map((p) => ({ value: String(p.id), label: p.nome, cor: p.cor }))]} />
+              <p className="mt-1 text-xs text-muted-foreground">Escolha o professor para usar o mesmo cadastro: o nome e os contatos são preenchidos. Ele assina como professor (pelas aulas) e como coordenador (pelo expediente).</p>
+            </Campo>
             <div className="grid gap-3 sm:grid-cols-3">
               <Campo label="Nome *"><Input value={edit.dados.nome} onChange={(e) => setEdit({ ...edit, dados: { ...edit.dados, nome: e.target.value } })} /></Campo>
               <Campo label="E-mail"><Input value={edit.dados.email ?? ""} onChange={(e) => setEdit({ ...edit, dados: { ...edit.dados, email: e.target.value } })} /></Campo>

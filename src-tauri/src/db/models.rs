@@ -345,6 +345,8 @@ pub struct Coordenador {
     /// JSON [{"dia":1,"ini":420,"fim":720}]
     pub expediente: String,
     pub turma_ids: Vec<i64>,
+    /// Professor cadastrado que também é coordenador (opcional)
+    pub professor_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -355,4 +357,5 @@ pub struct CoordenadorInput {
     pub telefone: Option<String>,
     pub expediente: String,
     pub turma_ids: Vec<i64>,
+    pub professor_id: Option<i64>,
 }

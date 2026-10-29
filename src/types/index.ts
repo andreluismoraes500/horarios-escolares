@@ -237,5 +237,7 @@ export interface Coordenador {
   /** JSON [{dia:1..6, ini:min, fim:min}] */
   expediente: string;
   turma_ids: number[];
+  /** professor cadastrado que também é coordenador */
+  professor_id: number | null;
 }
 export type CoordenadorInput = Omit<Coordenador, "id">;

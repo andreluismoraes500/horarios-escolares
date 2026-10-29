@@ -35,14 +35,24 @@ fn validar_expediente(txt: &str) -> Result<String> {
 fn carregar(conn: &Connection, id: i64) -> Result<Coordenador> {
     let mut c = conn
         .query_row(
-            "SELECT id, escola_id, nome, email, telefone, expediente FROM coordenadores WHERE id = ?1",
+            "SELECT id, escola_id, nome, email, telefone, expediente, professor_id FROM coordenadores WHERE id = ?1",
             [id],
-            |r| Ok(Coordenador { id: r.get(0)?, escola_id: r.get(1)?, nome: r.get(2)?, email: r.get(3)?, telefone: r.get(4)?, expediente: r.get(5)?, turma_ids: vec![] }),
+            |r| Ok(Coordenador { id: r.get(0)?, escola_id: r.get(1)?, nome: r.get(2)?, email: r.get(3)?, telefone: r.get(4)?, expediente: r.get(5)?, turma_ids: vec![], professor_id: r.get(6)? }),
         )
         .map_err(|_| AppError::msg("Coordenador não encontrado."))?;
     let mut st = conn.prepare("SELECT turma_id FROM coordenador_turmas WHERE coordenador_id = ?1 ORDER BY turma_id")?;
     c.turma_ids = st.query_map([id], |r| r.get(0))?.collect::<rusqlite::Result<Vec<i64>>>()?;
     Ok(c)
+}
+
+fn professor_ok(conn: &Connection, professor_id: Option<i64>, escola_id: i64) -> Result<()> {
+    if let Some(p) = professor_id {
+        let ok: i64 = conn.query_row("SELECT COUNT(*) FROM professores WHERE id = ?1 AND escola_id = ?2", params![p, escola_id], |r| r.get(0))?;
+        if ok == 0 {
+            return Err(AppError::msg("Professor inválido para esta escola."));
+        }
+    }
+    Ok(())
 }
 
 fn gravar_turmas(conn: &Connection, id: i64, escola_id: i64, turmas: &[i64]) -> Result<()> {
@@ -77,10 +87,11 @@ pub fn criar_coordenador(state: State<AppState>, token: String, dados: Coordenad
     ctx.exigir(&conn, "professores", "criar", Some(dados.escola_id))?;
     let nome = nome_valido(&dados.nome, "O nome do coordenador")?;
     let exp = validar_expediente(&dados.expediente)?;
+    professor_ok(&conn, dados.professor_id, dados.escola_id)?;
     let tx = conn.transaction()?;
     tx.execute(
-        "INSERT INTO coordenadores (escola_id, nome, email, telefone, expediente) VALUES (?1,?2,?3,?4,?5)",
-        params![dados.escola_id, nome, opcional(dados.email), opcional(dados.telefone), exp],
+        "INSERT INTO coordenadores (escola_id, nome, email, telefone, expediente, professor_id) VALUES (?1,?2,?3,?4,?5,?6)",
+        params![dados.escola_id, nome, opcional(dados.email), opcional(dados.telefone), exp, dados.professor_id],
     )?;
     let id = tx.last_insert_rowid();
     gravar_turmas(&tx, id, dados.escola_id, &dados.turma_ids)?;
@@ -97,10 +108,11 @@ pub fn atualizar_coordenador(state: State<AppState>, token: String, id: i64, dad
     ctx.exigir(&conn, "professores", "editar", Some(atual.escola_id))?;
     let nome = nome_valido(&dados.nome, "O nome do coordenador")?;
     let exp = validar_expediente(&dados.expediente)?;
+    professor_ok(&conn, dados.professor_id, atual.escola_id)?;
     let tx = conn.transaction()?;
     tx.execute(
-        "UPDATE coordenadores SET nome=?1, email=?2, telefone=?3, expediente=?4 WHERE id=?5",
-        params![nome, opcional(dados.email), opcional(dados.telefone), exp, id],
+        "UPDATE coordenadores SET nome=?1, email=?2, telefone=?3, expediente=?4, professor_id=?5 WHERE id=?6",
+        params![nome, opcional(dados.email), opcional(dados.telefone), exp, dados.professor_id, id],
     )?;
     gravar_turmas(&tx, id, atual.escola_id, &dados.turma_ids)?;
     ctx.auditar(&tx, "editar", "coordenadores", Some(id), &nome);
