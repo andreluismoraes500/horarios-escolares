@@ -6,7 +6,7 @@ pub mod commands;
 pub mod db;
 pub mod error;
 
-use commands::{arquivos, autogerar, auth as cmd_auth, backup as cmd_backup, cadastros, escolas, horarios, usuarios, AppState};
+use commands::{arquivos, autogerar, auth as cmd_auth, backup as cmd_backup, cadastros, coordenadores, escolas, horarios, usuarios, AppState};
 use std::time::Duration;
 use tauri::Manager;
 
@@ -121,6 +121,10 @@ pub fn run() {
             horarios::copiar_aulas,
             horarios::excluir_aulas,
             horarios::limpar_grade,
+            coordenadores::listar_coordenadores,
+            coordenadores::criar_coordenador,
+            coordenadores::atualizar_coordenador,
+            coordenadores::excluir_coordenador,
             horarios::listar_feriados,
             horarios::criar_feriado,
             horarios::atualizar_feriado,

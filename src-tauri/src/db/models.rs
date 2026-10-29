@@ -333,3 +333,26 @@ pub struct FeriadoInput {
     pub tipo: String,
     pub bloqueia_assinatura: bool,
 }
+
+/// Coordenador: responsável por turmas, com expediente (horários de trabalho) variável.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Coordenador {
+    pub id: i64,
+    pub escola_id: i64,
+    pub nome: String,
+    pub email: Option<String>,
+    pub telefone: Option<String>,
+    /// JSON [{"dia":1,"ini":420,"fim":720}]
+    pub expediente: String,
+    pub turma_ids: Vec<i64>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CoordenadorInput {
+    pub escola_id: i64,
+    pub nome: String,
+    pub email: Option<String>,
+    pub telefone: Option<String>,
+    pub expediente: String,
+    pub turma_ids: Vec<i64>,
+}

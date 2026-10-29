@@ -6,6 +6,7 @@ pub mod autogerar;
 pub mod auth;
 pub mod backup;
 pub mod cadastros;
+pub mod coordenadores;
 pub mod escolas;
 pub mod horarios;
 pub mod usuarios;

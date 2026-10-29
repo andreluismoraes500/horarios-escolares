@@ -110,3 +110,10 @@ Marque **Todas as turmas/professores/salas** para gerar, em um único PDF/CSV ou
 
 ## Lista de presença e feriados
 Menu **Lista de presença**: folha de assinatura **mensal** (uma por professor, com horários/turmas de cada dia) ou **semanal** (todos os professores), com PDF e impressão. Feriados nacionais são calculados automaticamente (inclusive Carnaval, Sexta-feira Santa e Corpus Christi); na aba **Feriados e recessos** você cadastra feriados locais, recessos e datas especiais por **intervalo de datas**, com tipo (Dia do Professor, recesso, ponto facultativo, evento, dia letivo extra) e a opção de **bloquear a assinatura**. Nos dias bloqueados a folha sai sombreada e sem campo de assinatura; cadastros da escola têm prioridade sobre os nacionais (ex.: “Dia letivo extra” libera um feriado ou sábado).
+
+## Lista de presença por período e coordenadores
+
+- A assinatura é **por período** (Manhã / Tarde / Noite): quem veio de manhã e faltou à noite fica só com a linha da noite em branco.
+- **Coordenadores** (menu *Coordenadores*): cadastre as turmas que coordenam (as matérias aparecem automaticamente) e o **expediente** por dia, com vários períodos e atalhos (Manhã, Tarde, Noite).
+- Na lista de presença, o botão *Professores/Coordenadores* alterna o tipo de folha; nas folhas dos professores a coluna **Visto do coordenador** mostra o nome de quem coordena as turmas do período.
+- Prévia, Imprimir e PDF usam a mesma folha (mesmas larguras e cores). Se o navegador ainda mostrar cabeçalho/rodapé, desmarque "Cabeçalhos e rodapés" na janela de impressão.

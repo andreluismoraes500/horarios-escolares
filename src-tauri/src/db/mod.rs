@@ -21,6 +21,7 @@ const MIGRACOES: &[&str] = &[
     include_str!("../../migrations/007_turma_fim_max.sql"),
     include_str!("../../migrations/008_grades_de_horario.sql"),
     include_str!("../../migrations/009_feriados.sql"),
+    include_str!("../../migrations/010_coordenadores.sql"),
 ];
 
 /// Paleta usada para dar cor automática aos professores.

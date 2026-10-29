@@ -17,6 +17,7 @@ import GradeSemanal from "@/pages/Horarios/GradeSemanal";
 import Usuarios from "@/pages/Usuarios/Usuarios";
 import Backups from "@/pages/Backups/Backups";
 import Auditoria from "@/pages/Auditoria/Auditoria";
+import Coordenadores from "@/pages/Coordenadores/Coordenadores";
 import Presenca from "@/pages/Presenca/Presenca";
 import Apoio from "@/pages/Apoio/Apoio";
 import Relatorios from "@/pages/Relatorios/Relatorios";
@@ -65,6 +66,7 @@ export default function App() {
         <Route path="usuarios" element={<Protegida recurso="usuarios"><Usuarios /></Protegida>} />
         <Route path="backups" element={<Protegida recurso="backup"><Backups /></Protegida>} />
         <Route path="auditoria" element={<Protegida recurso="auditoria"><Auditoria /></Protegida>} />
+        <Route path="coordenadores" element={<Protegida recurso="professores"><Coordenadores /></Protegida>} />
         <Route path="presenca" element={<Protegida recurso="horarios"><Presenca /></Protegida>} />
         <Route path="apoio" element={<Apoio />} />
         <Route path="*" element={<Navigate to="/" replace />} />

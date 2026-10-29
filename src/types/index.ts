@@ -227,3 +227,15 @@ export interface Feriado {
   bloqueia_assinatura: boolean;
 }
 export type FeriadoInput = Omit<Feriado, "id">;
+
+export interface Coordenador {
+  id: number;
+  escola_id: number;
+  nome: string;
+  email: string | null;
+  telefone: string | null;
+  /** JSON [{dia:1..6, ini:min, fim:min}] */
+  expediente: string;
+  turma_ids: number[];
+}
+export type CoordenadorInput = Omit<Coordenador, "id">;

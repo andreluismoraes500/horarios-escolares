@@ -5,7 +5,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useAuth } from "@/stores/auth";
 import type {
-  Aula, AulaInput, Feriado, FeriadoInput, ConfigBackup, Demanda, DemandaInput, ResultadoGeracao, EntradaAuditoria, EntradaBackup, Escola, Grade, Grupo, Horario,
+  Aula, AulaInput, Feriado, FeriadoInput, Coordenador, CoordenadorInput, ConfigBackup, Demanda, DemandaInput, ResultadoGeracao, EntradaAuditoria, EntradaBackup, Escola, Grade, Grupo, Horario,
   IntervaloCfg, Materia, Professor, Resumo, Sala, Turma, Turno, Usuario, Verificacao,
 } from "@/types";
 
@@ -124,6 +124,10 @@ export const api = {
   moverAula: (id: number, diaSemana: number, horarioId: number) =>
     call<Aula>("mover_aula", { id, diaSemana, horarioId }),
   trocarAulas: (idA: number, idB: number) => call<void>("trocar_aulas", { idA, idB }),
+  listarCoordenadores: (escolaId: number) => call<Coordenador[]>("listar_coordenadores", { escolaId }),
+  criarCoordenador: (dados: CoordenadorInput) => call<Coordenador>("criar_coordenador", { dados }),
+  atualizarCoordenador: (id: number, dados: CoordenadorInput) => call<Coordenador>("atualizar_coordenador", { id, dados }),
+  excluirCoordenador: (id: number) => call<void>("excluir_coordenador", { id }),
   listarFeriados: (escolaId: number) => call<Feriado[]>("listar_feriados", { escolaId }),
   criarFeriado: (dados: FeriadoInput) => call<Feriado>("criar_feriado", { dados }),
   atualizarFeriado: (id: number, dados: FeriadoInput) => call<Feriado>("atualizar_feriado", { id, dados }),

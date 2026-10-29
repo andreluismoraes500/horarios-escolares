@@ -1,6 +1,6 @@
 [package]
 name = "horarios-escolares"
-version = "1.0.8"
+version = "1.0.9"
 description = "Gerenciamento de horários escolares multi-escola"
 edition = "2021"
 

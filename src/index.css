@@ -127,3 +127,22 @@ body {
     page-break-after: auto;
   }
 }
+
+/* Folha da lista de presença: aparência fixa (clara) para a prévia, a impressão e o PDF saírem iguais */
+.folha-presenca { background: #fff; color: #000; font-family: Helvetica, Arial, sans-serif; padding: 4mm; }
+.folha-presenca .fp-escola { font-size: 13pt; font-weight: 600; }
+.folha-presenca .fp-sub { font-size: 10pt; margin-bottom: 4mm; }
+.folha-presenca table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8.5pt; }
+.folha-presenca th { background: #2563eb; color: #fff; text-align: left; border: 0.2mm solid #94a3b8; padding: 1.6mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.folha-presenca td { border: 0.2mm solid #94a3b8; padding: 1.6mm; vertical-align: middle; white-space: pre-line; overflow-wrap: anywhere; }
+.folha-presenca tr { break-inside: avoid; }
+.folha-presenca td.bloq { background: #cbd5e1; color: #475569; font-style: italic; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.folha-presenca td.vazio { background: #f1f5f9; color: #94a3b8; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.folha-presenca.semanal table { font-size: 7.5pt; }
+.folha-presenca.semanal td { vertical-align: top; }
+.folha-presenca .fp-resumo { font-size: 8.5pt; margin-top: 2mm; }
+.folha-presenca .fp-dir { margin-top: 12mm; width: 76mm; border-top: 0.2mm solid #000; font-size: 8.5pt; padding-top: 1mm; }
+@media print {
+  .folha-presenca { padding: 4mm; }
+}
+@media print { [data-sonner-toaster] { display: none !important; } }

@@ -14,8 +14,8 @@ import { Badge, Button, Campo, Card, Confirmar, Input, Modal, Select, Tabela, Td
 import SelectBusca from "@/components/SelectBusca";
 import { cn } from "@/lib/utils";
 import { feriadosNacionais, iso, segundaDaSemana, somarDias, TIPOS_FERIADO } from "@/lib/feriados";
-import { dataBr, folhaMensal, folhaSemanal, MESES, type Dados, type Folha } from "@/lib/presenca";
-import type { Feriado, FeriadoInput } from "@/types";
+import { dataBr, folhaMensal, folhaMensalCoord, folhaSemanal, folhaSemanalCoord, type Dados, type Folha } from "@/lib/presenca";
+import type { Coordenador, Feriado, FeriadoInput } from "@/types";
 
 function paraBase64(bytes: Uint8Array): string {
   let s = "";
@@ -29,11 +29,15 @@ export default function Presenca() {
   const escola = escolas.find((e) => e.id === escolaId);
   const [aba, setAba] = useState<"lista" | "feriados">("lista");
   const [feriados, setFeriados] = useState<Feriado[]>([]);
+  const [coordenadores, setCoordenadores] = useState<Coordenador[]>([]);
 
   async function carregarFeriados() {
     if (!escolaId) return;
     try { setFeriados(await api.listarFeriados(escolaId)); } catch (e) { toast.error((e as Error).message); }
   }
+  useEffect(() => {
+    if (escolaId) api.listarCoordenadores(escolaId).then(setCoordenadores).catch(() => setCoordenadores([]));
+  }, [escolaId]);
   useEffect(() => { void carregarFeriados(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [escolaId]);
 
   // ---------------- Lista ----------------
@@ -43,16 +47,19 @@ export default function Presenca() {
   const [semana, setSemana] = useState(segundaDaSemana(hoje));
   const [profId, setProfId] = useState<string>("todos");
   const [sabado, setSabado] = useState(false);
+  const [quem, setQuem] = useState<"professores" | "coordenadores">("professores");
+  const [visto, setVisto] = useState(true);
 
-  const dados: Dados = { aulas, horarios, turmas, grupos, materias, feriados };
+  const dados: Dados = { aulas, horarios, turmas, grupos, materias, feriados, coordenadores };
   const folhas: Folha[] = useMemo(() => {
-    if (periodo === "semanal") {
-      const alvo = profId === "todos" ? professores : professores.filter((p) => String(p.id) === profId);
-      return [folhaSemanal(alvo, semana, sabado, dados)];
+    if (quem === "coordenadores") {
+      const alvo = profId === "todos" ? coordenadores : coordenadores.filter((c) => String(c.id) === profId);
+      return periodo === "semanal" ? (alvo.length ? [folhaSemanalCoord(alvo, semana, sabado, dados)] : []) : alvo.map((c) => folhaMensalCoord(c, mes, sabado, dados));
     }
     const alvo = profId === "todos" ? professores : professores.filter((p) => String(p.id) === profId);
-    return alvo.map((p) => folhaMensal(p, mes, sabado, dados));
-  }, [periodo, mes, semana, profId, sabado, professores, aulas, horarios, turmas, grupos, materias, feriados]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (periodo === "semanal") return [folhaSemanal(alvo, semana, sabado, dados, visto)];
+    return alvo.map((p) => folhaMensal(p, mes, sabado, dados, visto));
+  }, [quem, visto, periodo, mes, semana, profId, sabado, professores, coordenadores, aulas, horarios, turmas, grupos, materias, feriados]); // eslint-disable-line react-hooks/exhaustive-deps
   const vazio = folhas.length === 0 || folhas.every((f) => f.linhas.length === 0);
 
   async function exportarPdf() {
@@ -66,23 +73,24 @@ export default function Presenca() {
       if (escola?.logo) { try { doc.addImage(escola.logo, "PNG", 14, 6, 14, 14); x = 32; } catch { /* sem logo */ } }
       doc.setFontSize(13); doc.text(escola?.nome ?? "Escola", x, 12);
       doc.setFontSize(10); doc.text(`${f.titulo}   |   ${f.subtitulo}`, x, 18);
-      const semanal = periodo === "semanal";
+      const semanal = f.paisagem;
       autoTable(doc, {
         startY: 25,
         head: [f.head],
         body: f.linhas.map((l) => l.map((c) => ({
-          content: c.tipo === "ass" && !semanal ? "" : c.t,
+          content: c.tipo === "ass" && c.t === "" ? "" : c.t,
           colSpan: c.span,
           styles: c.tipo === "bloq"
             ? { fillColor: [203, 213, 225] as [number, number, number], textColor: [71, 85, 105] as [number, number, number], fontStyle: "italic" as const, halign: "center" as const }
             : c.tipo === "vazio" ? { fillColor: [241, 245, 249] as [number, number, number], textColor: [148, 163, 184] as [number, number, number], halign: "center" as const }
             : {},
         }))) as never,
-        styles: { fontSize: semanal ? 7.5 : 8.5, cellPadding: 1.6, valign: "middle", lineColor: [148, 163, 184], lineWidth: 0.2, minCellHeight: semanal ? 15 : 8.5 },
+        styles: { fontSize: semanal ? 7.5 : 8.5, cellPadding: 1.6, valign: "middle", lineColor: [148, 163, 184], lineWidth: 0.2, minCellHeight: f.altura },
         headStyles: { fillColor: [37, 99, 235] },
-        columnStyles: semanal ? { 0: { cellWidth: 38 } } : { 0: { cellWidth: 24 }, 2: { cellWidth: 62 } },
+        theme: "grid",
+        columnStyles: Object.fromEntries(f.larg.map((w, k) => [k, w ? { cellWidth: w } : {}]).filter((_, k) => f.larg[k] !== null)),
         // Semanal: o texto sobe e deixa a parte de baixo da célula livre para a assinatura.
-        didParseCell: (d) => { if (semanal && d.section === "body" && d.column.index > 0) d.cell.styles.valign = "top"; },
+        didParseCell: (d) => { if (semanal && d.section === "body" && d.column.index > 1) d.cell.styles.valign = "top"; },
       });
       const y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
       doc.setFontSize(8.5);
@@ -151,43 +159,43 @@ export default function Presenca() {
                 <Button size="sm" variant="outline" aria-label="Próxima semana" onClick={() => setSemana(somarDias(semana, 7))}>›</Button>
               </div>
             )}
-            <SelectBusca className="w-64" ariaLabel="Professor" value={profId} onChange={setProfId}
-              opcoes={[{ value: "todos", label: periodo === "mensal" ? "Todos (uma folha por professor)" : "Todos os professores" },
-                ...professores.map((p) => ({ value: String(p.id), label: p.nome, cor: p.cor }))]} />
+            <div className="flex rounded-md border bg-card p-0.5 text-sm">
+              {([["professores", "Professores"], ["coordenadores", "Coordenadores"]] as const).map(([k, r]) => (
+                <button key={k} onClick={() => { setQuem(k); setProfId("todos"); }} className={cn("rounded px-3 py-1", quem === k ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>{r}</button>
+              ))}
+            </div>
+            <SelectBusca className="w-64" ariaLabel={quem === "professores" ? "Professor" : "Coordenador"} value={profId} onChange={setProfId}
+              opcoes={[{ value: "todos", label: periodo === "mensal" ? "Todos (uma folha por pessoa)" : "Todos" },
+                ...(quem === "professores" ? professores.map((p) => ({ value: String(p.id), label: p.nome, cor: p.cor })) : coordenadores.map((c) => ({ value: String(c.id), label: c.nome })))]} />
+            {quem === "professores" && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={visto} onChange={(e) => setVisto(e.target.checked)} /> Visto do coordenador</label>}
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={sabado} onChange={(e) => setSabado(e.target.checked)} /> Incluir sábado</label>
           </div>
           {vazio ? <Vazio texto="Nenhum professor com aulas neste período. Monte a grade semanal primeiro." /> : (
             <div className="area-impressao space-y-6">
+              <style>{`@media print{@page{size:A4 ${folhas[0]?.paisagem ? "landscape" : "portrait"};margin:10mm}}`}</style>
               {folhas.map((f, i) => (
-                <Card key={i} className="pagina-impressao overflow-x-auto p-4">
+                <div key={i} className={cn("pagina-impressao folha-presenca mx-auto overflow-x-auto rounded border shadow-sm", f.paisagem && "semanal")} style={{ maxWidth: f.paisagem ? "297mm" : "210mm" }}>
                   <div className="mb-3 flex items-center gap-3">
-                    {escola?.logo && <img src={escola.logo} alt="" className="h-10 w-10 object-contain" />}
+                    {escola?.logo && <img src={escola.logo} alt="" style={{ width: "14mm", height: "14mm", objectFit: "contain" }} />}
                     <div>
-                      <div className="font-semibold">{escola?.nome}</div>
-                      <div className="text-sm text-muted-foreground">{f.titulo} · {f.subtitulo}</div>
+                      <div className="fp-escola">{escola?.nome}</div>
+                      <div className="fp-sub" style={{ marginBottom: 0 }}>{f.titulo}   |   {f.subtitulo}</div>
                     </div>
                   </div>
-                  <table className="w-full border-collapse text-xs">
-                    <thead><tr>{f.head.map((h) => <th key={h} className="border bg-muted p-1.5 text-left">{h}</th>)}</tr></thead>
+                  <table>
+                    <colgroup>{f.larg.map((w, k) => <col key={k} style={w ? { width: `${w}mm` } : undefined} />)}</colgroup>
+                    <thead><tr>{f.head.map((h) => <th key={h}>{h}</th>)}</tr></thead>
                     <tbody>
                       {f.linhas.map((l, r) => (
-                        <tr key={r}>
-                          {l.map((c, k) => (
-                            <td key={k} colSpan={c.span}
-                              className={cn("border p-1.5 align-top whitespace-pre-line",
-                                c.tipo === "bloq" && "bg-muted text-center text-muted-foreground italic [print-color-adjust:exact]",
-                                c.tipo === "vazio" && "bg-muted/40 text-center text-muted-foreground",
-                                c.tipo === "ass" && "h-10 min-w-[120px]")}>
-                              {c.t}
-                            </td>
-                          ))}
+                        <tr key={r} style={{ height: `${f.altura}mm` }}>
+                          {l.map((c, k) => <td key={k} colSpan={c.span} className={c.tipo === "bloq" || c.tipo === "vazio" ? c.tipo : undefined}>{c.t}</td>)}
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {f.resumo && <p className="mt-2 text-xs text-muted-foreground">{f.resumo}</p>}
-                  <div className="mt-8 w-72 border-t pt-1 text-xs text-muted-foreground">Direção / Coordenação</div>
-                </Card>
+                  {f.resumo && <p className="fp-resumo">{f.resumo}</p>}
+                  <div className="fp-dir">Direção / Coordenação</div>
+                </div>
               ))}
             </div>
           )}
