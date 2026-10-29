@@ -215,3 +215,15 @@ export interface ResultadoGeracao {
   gravadas: number;
   aplicado: boolean;
 }
+
+export interface Feriado {
+  id: number;
+  escola_id: number;
+  /** AAAA-MM-DD */
+  data_ini: string;
+  data_fim: string;
+  nome: string;
+  tipo: string;
+  bloqueia_assinatura: boolean;
+}
+export type FeriadoInput = Omit<Feriado, "id">;

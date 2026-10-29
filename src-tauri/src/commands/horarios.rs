@@ -736,3 +736,87 @@ pub fn obter_resumo(state: State<AppState>, token: String, escola_id: i64) -> Re
         capacidade_grade: 5 * posicoes,
     })
 }
+
+// ============================ Feriados e recessos ============================
+
+fn data_valida(t: &str) -> bool {
+    chrono::NaiveDate::parse_from_str(t, "%Y-%m-%d").is_ok()
+}
+
+fn validar_feriado(d: &FeriadoInput) -> Result<String> {
+    let nome = nome_valido(&d.nome, "O nome do feriado")?;
+    if !data_valida(&d.data_ini) || !data_valida(&d.data_fim) {
+        return Err(AppError::msg("Informe datas válidas."));
+    }
+    if d.data_fim < d.data_ini {
+        return Err(AppError::msg("A data final não pode ser anterior à inicial."));
+    }
+    Ok(nome)
+}
+
+fn feriado_por_id(conn: &Connection, id: i64) -> Result<Feriado> {
+    conn.query_row(
+        "SELECT id, escola_id, data_ini, data_fim, nome, tipo, bloqueia_assinatura FROM feriados WHERE id = ?1",
+        [id],
+        |r| Ok(Feriado { id: r.get(0)?, escola_id: r.get(1)?, data_ini: r.get(2)?, data_fim: r.get(3)?, nome: r.get(4)?, tipo: r.get(5)?, bloqueia_assinatura: r.get::<_, i64>(6)? != 0 }),
+    )
+    .map_err(|_| AppError::msg("Feriado não encontrado."))
+}
+
+#[tauri::command]
+pub fn listar_feriados(state: State<AppState>, token: String, escola_id: i64) -> Result<Vec<Feriado>> {
+    let conn = state.db.conn();
+    let ctx = auth::autenticar(&conn, &token)?;
+    ctx.exigir(&conn, "horarios", "ver", Some(escola_id))?;
+    let mut st = conn.prepare(
+        "SELECT id, escola_id, data_ini, data_fim, nome, tipo, bloqueia_assinatura FROM feriados
+         WHERE escola_id = ?1 ORDER BY data_ini, id",
+    )?;
+    let v = st
+        .query_map([escola_id], |r| {
+            Ok(Feriado { id: r.get(0)?, escola_id: r.get(1)?, data_ini: r.get(2)?, data_fim: r.get(3)?, nome: r.get(4)?, tipo: r.get(5)?, bloqueia_assinatura: r.get::<_, i64>(6)? != 0 })
+        })?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    Ok(v)
+}
+
+#[tauri::command]
+pub fn criar_feriado(state: State<AppState>, token: String, dados: FeriadoInput) -> Result<Feriado> {
+    let conn = state.db.conn();
+    let ctx = auth::autenticar(&conn, &token)?;
+    ctx.exigir(&conn, "horarios", "criar", Some(dados.escola_id))?;
+    let nome = validar_feriado(&dados)?;
+    conn.execute(
+        "INSERT INTO feriados (escola_id, data_ini, data_fim, nome, tipo, bloqueia_assinatura) VALUES (?1,?2,?3,?4,?5,?6)",
+        params![dados.escola_id, dados.data_ini, dados.data_fim, nome, dados.tipo, dados.bloqueia_assinatura as i64],
+    )?;
+    let id = conn.last_insert_rowid();
+    ctx.auditar(&conn, "criar", "feriados", Some(id), &format!("{nome} ({} a {})", dados.data_ini, dados.data_fim));
+    feriado_por_id(&conn, id)
+}
+
+#[tauri::command]
+pub fn atualizar_feriado(state: State<AppState>, token: String, id: i64, dados: FeriadoInput) -> Result<Feriado> {
+    let conn = state.db.conn();
+    let ctx = auth::autenticar(&conn, &token)?;
+    let atual = feriado_por_id(&conn, id)?;
+    ctx.exigir(&conn, "horarios", "editar", Some(atual.escola_id))?;
+    let nome = validar_feriado(&dados)?;
+    conn.execute(
+        "UPDATE feriados SET data_ini=?1, data_fim=?2, nome=?3, tipo=?4, bloqueia_assinatura=?5 WHERE id=?6",
+        params![dados.data_ini, dados.data_fim, nome, dados.tipo, dados.bloqueia_assinatura as i64, id],
+    )?;
+    ctx.auditar(&conn, "editar", "feriados", Some(id), &nome);
+    feriado_por_id(&conn, id)
+}
+
+#[tauri::command]
+pub fn excluir_feriado(state: State<AppState>, token: String, id: i64) -> Result<()> {
+    let conn = state.db.conn();
+    let ctx = auth::autenticar(&conn, &token)?;
+    let f = feriado_por_id(&conn, id)?;
+    ctx.exigir(&conn, "horarios", "excluir", Some(f.escola_id))?;
+    conn.execute("DELETE FROM feriados WHERE id = ?1", [id])?;
+    ctx.auditar(&conn, "excluir", "feriados", Some(id), &f.nome);
+    Ok(())
+}

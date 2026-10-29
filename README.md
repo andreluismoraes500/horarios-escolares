@@ -107,3 +107,6 @@ O app consulta o GitHub ao abrir (e pelo botão **Verificar atualizações** no 
 
 ## Relatórios: imprimir tudo
 Marque **Todas as turmas/professores/salas** para gerar, em um único PDF/CSV ou na impressão (**Imprimir tudo**), uma grade por página.
+
+## Lista de presença e feriados
+Menu **Lista de presença**: folha de assinatura **mensal** (uma por professor, com horários/turmas de cada dia) ou **semanal** (todos os professores), com PDF e impressão. Feriados nacionais são calculados automaticamente (inclusive Carnaval, Sexta-feira Santa e Corpus Christi); na aba **Feriados e recessos** você cadastra feriados locais, recessos e datas especiais por **intervalo de datas**, com tipo (Dia do Professor, recesso, ponto facultativo, evento, dia letivo extra) e a opção de **bloquear a assinatura**. Nos dias bloqueados a folha sai sombreada e sem campo de assinatura; cadastros da escola têm prioridade sobre os nacionais (ex.: “Dia letivo extra” libera um feriado ou sábado).

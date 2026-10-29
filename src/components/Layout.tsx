@@ -3,6 +3,7 @@ import {
   Archive, Building2, CalendarDays, Clock, DoorOpen, FileText, GraduationCap, LayoutDashboard,
   LogOut, Moon, Wand2, Sun, Users, UserCog, BookOpen, ShieldCheck,
   Heart,
+  ClipboardCheck,
 } from "lucide-react";
 import { useAuth } from "@/stores/auth";
 import { useDados } from "@/stores/dados";
@@ -33,6 +34,7 @@ const ITENS: Item[] = [
   { para: "/gerador", rotulo: "Gerador automático", icone: <Wand2 className="h-4 w-4" />, recurso: "aulas" },
   { para: "/grade", rotulo: "Grade semanal", icone: <CalendarDays className="h-4 w-4" />, recurso: "aulas" },
   { para: "/relatorios", rotulo: "Relatórios", icone: <FileText className="h-4 w-4" />, recurso: "relatorios" },
+  { para: "/presenca", rotulo: "Lista de presença", icone: <ClipboardCheck className="h-4 w-4" />, recurso: "horarios" },
   { para: "/usuarios", rotulo: "Usuários", icone: <UserCog className="h-4 w-4" />, recurso: "usuarios" },
   { para: "/backups", rotulo: "Backups", icone: <Archive className="h-4 w-4" />, recurso: "backup" },
   { para: "/auditoria", rotulo: "Auditoria", icone: <ShieldCheck className="h-4 w-4" />, recurso: "auditoria" },

@@ -311,3 +311,25 @@ pub struct Grade {
     pub escola_id: i64,
     pub nome: String,
 }
+
+/// Feriado, recesso ou data especial da escola (intervalo de datas AAAA-MM-DD).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Feriado {
+    pub id: i64,
+    pub escola_id: i64,
+    pub data_ini: String,
+    pub data_fim: String,
+    pub nome: String,
+    pub tipo: String,
+    pub bloqueia_assinatura: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct FeriadoInput {
+    pub escola_id: i64,
+    pub data_ini: String,
+    pub data_fim: String,
+    pub nome: String,
+    pub tipo: String,
+    pub bloqueia_assinatura: bool,
+}
